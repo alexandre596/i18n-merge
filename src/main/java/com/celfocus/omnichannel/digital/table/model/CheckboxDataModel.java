@@ -2,12 +2,13 @@ package com.celfocus.omnichannel.digital.table.model;
 
 import javax.swing.table.AbstractTableModel;
 
-public class ToggleDataModel extends AbstractTableModel {
+public class CheckboxDataModel extends AbstractTableModel {
 
-    private static final String[] names = {"Chave", "Valor", "Status"};
+    private String[] names;
     private Object[][] values;
 
-    public ToggleDataModel(Object[][] values) {
+    public CheckboxDataModel(String[] names, Object[][] values) {
+    	this.names = names;
         this.values = values;
     }
 

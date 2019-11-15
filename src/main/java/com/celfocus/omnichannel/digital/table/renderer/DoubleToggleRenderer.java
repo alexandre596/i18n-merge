@@ -8,7 +8,7 @@ import javax.swing.table.TableCellRenderer;
 
 import com.celfocus.omnichannel.digital.table.data.FileLine;
 
-public class RadioRenderer extends JToggleButton implements TableCellRenderer {
+public class DoubleToggleRenderer extends JToggleButton implements TableCellRenderer {
 	
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
@@ -16,6 +16,7 @@ public class RadioRenderer extends JToggleButton implements TableCellRenderer {
 		FileLine v = (FileLine) value;
         this.setSelected(v.getSelected());
         this.setText(v.getValue());
+        this.setToolTipText(v.getValue());
 		return this;
 	}
 }

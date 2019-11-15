@@ -106,7 +106,7 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 	}
 	
 	private File getLocalFile(Project p) throws FileNotFoundException {
-		List<File> files = (List<File>) FileUtils.listFiles(new File(p.getProjectPath()), FileFilterUtils.nameFileFilter(i18nFileName),
+		List<File> files = (List<File>) FileUtils.listFiles(new File(p.getProjectPath() + "\\packages\\digital.cms.apps"), FileFilterUtils.nameFileFilter(i18nFileName),
 				CustomFileFilterUtils.unNameFileFilter(excludeDirectories));
 		
 		Optional<File> optional = files.stream()

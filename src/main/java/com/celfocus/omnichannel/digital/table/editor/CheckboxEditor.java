@@ -8,27 +8,26 @@ import javax.swing.AbstractCellEditor;
 import javax.swing.JTable;
 import javax.swing.table.TableCellEditor;
 
-import com.celfocus.omnichannel.digital.table.renderer.ToggleRenderer;
+import com.celfocus.omnichannel.digital.table.renderer.CheckboxRenderer;
 
-public class ToggleEditor extends AbstractCellEditor implements TableCellEditor, ItemListener {
+public class CheckboxEditor extends AbstractCellEditor implements TableCellEditor, ItemListener {
 
-	private ToggleRenderer tr = new ToggleRenderer();
+	private CheckboxRenderer jr = new CheckboxRenderer();
 
-	public ToggleEditor() {
-		tr.addItemListener(this);
+	public CheckboxEditor() {
+		jr.addItemListener(this);
 	}
 
 	@Override
 	public Object getCellEditorValue() {
-		return tr.isSelected();
+		return jr.isSelected();
 	}
 
 	@Override
 	public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int col) {
 		Boolean v = (Boolean) value;
-		tr.setSelected(v);
-		tr.setText("OK");
-		return tr;
+		jr.setSelected(v);
+		return jr;
 	}
 
 	@Override

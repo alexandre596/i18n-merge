@@ -45,6 +45,9 @@ public class ProjectsUI extends JFrame {
 
 	@Autowired
 	private MergeFilesService mergeFilesService;
+	
+	@Autowired
+	private MergeUI mergeUI;
 
 	@Value("${font.family}")
 	private String fontFamily;
@@ -149,6 +152,7 @@ public class ProjectsUI extends JFrame {
 				List<Project> projects = getProjectList(projectList);
 				try {
 					Map<Project, MergeStatus> mergeStatus = mergeFilesService.getMergeStatus(productionFilePath, projects);
+					mergeUI.initialize(mergeStatus);
 				} catch (InvalidFileException e1) {
 					JOptionPane.showMessageDialog(null, e1.getMessage(),
 							rb.getString("errorMessageCheckProjectTitle"), JOptionPane.ERROR_MESSAGE);

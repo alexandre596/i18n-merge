@@ -4,13 +4,14 @@ import javax.swing.table.AbstractTableModel;
 
 import com.celfocus.omnichannel.digital.table.data.FileLine;
 
-public class RadioDataModel extends AbstractTableModel {
+public class DoubleToggleDataModel extends AbstractTableModel {
 
-    private static final String[] names = {"Chave", "Valor Local", "Valor Prod"};
+    private String[] names;
     private Object[][] values;
 
-    public RadioDataModel(Object[][] values) {
-        this.values = values;
+    public DoubleToggleDataModel(String[] names, Object[][] values) {
+        this.names = names;
+    	this.values = values;
     }
 
     @Override
@@ -33,7 +34,15 @@ public class RadioDataModel extends AbstractTableModel {
         if (this.values[row][col] instanceof FileLine) {
         	FileLine v = (FileLine) this.values[row][col];
         	v.setSelected((Boolean) aValue);
-            this.fireTableCellUpdated(row, col);
+        	this.fireTableCellUpdated(row, col);
+        	
+        	// Se selecionar de um lado, tem que desselecionar do outro
+        	if((Boolean) aValue) {
+        		int counterCol = col == 1 ? 2 : 1;
+        		FileLine counterV = (FileLine) this.values[row][counterCol];
+        		counterV.setSelected(false);
+        		this.fireTableCellUpdated(row, counterCol);
+        	}
         }
     }
 

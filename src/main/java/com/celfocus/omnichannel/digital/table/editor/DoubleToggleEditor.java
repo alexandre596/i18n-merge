@@ -9,27 +9,27 @@ import javax.swing.JTable;
 import javax.swing.table.TableCellEditor;
 
 import com.celfocus.omnichannel.digital.table.data.FileLine;
-import com.celfocus.omnichannel.digital.table.renderer.RadioRenderer;
+import com.celfocus.omnichannel.digital.table.renderer.DoubleToggleRenderer;
 
-public class RadioEditor extends AbstractCellEditor implements TableCellEditor, ItemListener {
+public class DoubleToggleEditor extends AbstractCellEditor implements TableCellEditor, ItemListener {
 
-	private RadioRenderer rr = new RadioRenderer();
+	private DoubleToggleRenderer dtr = new DoubleToggleRenderer();
 
-	public RadioEditor() {
-		rr.addItemListener(this);
+	public DoubleToggleEditor() {
+		dtr.addItemListener(this);
 	}
 
 	@Override
 	public Object getCellEditorValue() {
-		return rr.isSelected();
+		return dtr.isSelected();
 	}
 
 	@Override
 	public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int col) {
 		FileLine v = (FileLine) value;
-		rr.setSelected(v.getSelected());
-		rr.setText(v.getValue());
-		return rr;
+		dtr.setSelected(v.getSelected());
+		dtr.setText(v.getValue());
+		return dtr;
 	}
 
 	@Override
