@@ -8,6 +8,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,16 +23,19 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JViewport;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.celfocus.omnichannel.digital.dto.MergeStatus;
 import com.celfocus.omnichannel.digital.dto.Project;
+import com.celfocus.omnichannel.digital.dto.ResolvedMerge;
 import com.celfocus.omnichannel.digital.dto.ValueDifference;
 import com.celfocus.omnichannel.digital.table.data.FileLine;
 import com.celfocus.omnichannel.digital.table.editor.CheckboxEditor;
@@ -92,12 +97,12 @@ public class MergeUI extends JFrame {
 			JPanel newLinesPanel = this.buildNewLinesPanel(merge.getValue());
 			JPanel updatedLinesPanel = this.buildUpdatedLinesPanel(merge.getValue());
 			JPanel removedLinesPanel = this.buildRemovedLinesPanel(merge.getValue());
-			
-			if(isAllPanelsHidden(newLinesPanel, updatedLinesPanel, removedLinesPanel)) {
+
+			if (isAllPanelsHidden(newLinesPanel, updatedLinesPanel, removedLinesPanel)) {
 				JLabel noItems = new JLabel(rb.getString("noChangesLabel"));
 				noItems.setFont(defaultFont);
 				tab.add(noItems);
-			} 
+			}
 
 			tab.add(newLinesPanel, gbc);
 			tab.add(updatedLinesPanel, gbc);
@@ -129,7 +134,7 @@ public class MergeUI extends JFrame {
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
-	
+
 	private boolean isAllPanelsHidden(JPanel newLinesPanel, JPanel updatedLinesPanel, JPanel removedLinesPanel) {
 		return !newLinesPanel.isVisible() && !updatedLinesPanel.isVisible() && !removedLinesPanel.isVisible();
 	}
@@ -151,7 +156,7 @@ public class MergeUI extends JFrame {
 			data[i][2] = true;
 			i = i + 1;
 		}
-		
+
 		JTable table = buildSimpleTable(data);
 		JScrollPane scrollPane = new JScrollPane(table);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -229,7 +234,7 @@ public class MergeUI extends JFrame {
 		names[0] = rb.getString("columnKey");
 		names[1] = rb.getString("columnValue");
 		names[2] = rb.getString("columnCheck");
-		
+
 		CheckboxDataModel model = new CheckboxDataModel(names, data);
 		JTable table = new JTable(model);
 
@@ -239,7 +244,7 @@ public class MergeUI extends JFrame {
 		buildTable(table);
 		table.setPreferredScrollableViewportSize(
 				new Dimension(table.getPreferredSize().width, table.getRowHeight() * data.length));
-		
+
 		return table;
 	}
 
@@ -248,7 +253,7 @@ public class MergeUI extends JFrame {
 		names[0] = rb.getString("columnKey");
 		names[1] = rb.getString("columnOldValue");
 		names[2] = rb.getString("columnNewValue");
-		
+
 		DoubleToggleDataModel model = new DoubleToggleDataModel(names, data);
 		JTable table = new JTable(model);
 
@@ -264,7 +269,7 @@ public class MergeUI extends JFrame {
 
 	private JTable buildTable(JTable table) {
 		table.setDefaultRenderer(String.class, new LabelRenderer());
-		
+
 		table.setAutoCreateRowSorter(true);
 		table.setOpaque(false);
 		((DefaultTableCellRenderer) table.getDefaultRenderer(Object.class)).setOpaque(false);
@@ -307,10 +312,140 @@ public class MergeUI extends JFrame {
 		this.btnFinishStep.setFont(defaultFont);
 		this.btnFinishStep.setVisible(false);
 
+		this.btnFinishStep.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				Map<Project, ResolvedMerge> resolvedMerge = new LinkedHashMap<>(); 
+				for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+					if (tabbedPane.getComponent(i) instanceof JPanel) {
+						Project project = getProjectFromTitle(tabbedPane.getTitleAt(i));
+						resolvedMerge.put(project, getTableDataFromJPanel((JPanel) tabbedPane.getComponent(i), project));
+						resolvedMerge.get(project);
+					}
+
+				}
+			}
+		});
+
 		panel.add(this.btnPreviousStep);
 		panel.add(this.btnNextStep);
 		panel.add(this.btnFinishStep);
 		return panel;
+	}
+
+	private Project getProjectFromTitle(String title) {
+		for (Project p : mergeStatus.keySet()) {
+			if (title.equals(p.getProjectName())) {
+				return p;
+			}
+		}
+
+		return new Project();
+	}
+
+	private ResolvedMerge getTableDataFromJPanel(JPanel panel, Project project) {
+		ResolvedMerge resolvedMerge = new ResolvedMerge();
+
+		// Loop through all the tabs
+		for (Component c : panel.getComponents()) {
+			if (c instanceof JPanel) {
+				JPanel subPanel = (JPanel) c;
+				// Check if it's a scroll pane, so I can get the table
+				if (this.isComponentJScrollPane(subPanel)) {
+					JScrollPane scrollPane = (JScrollPane) subPanel.getComponent(0);
+					// Get the table and check if there's any data to it, to avoid ArrayOutOfBoundException
+					JTable table = this.getTableFromJScrollPane(scrollPane);
+					if (table.getRowCount() > 0) {
+						// If it's a "simple" table, aka New and Removed lines table, we add all the data that was checked
+						if (this.isSimpleTable(table)) {
+							ResolvedMerge simpleTableResult = this.addSelectedLines(project, resolvedMerge, mergeStatus.get(project), table);
+							resolvedMerge.getNewLines().putAll(simpleTableResult.getNewLines());
+							resolvedMerge.getRemovedLines().putAll(simpleTableResult.getRemovedLines());
+						} else if (this.isUpdateTable(table)) {
+							// If it's an "update" table, we must check which value was selected before proceeding
+							ResolvedMerge updatedItems = this.addUpdatedLines(project, resolvedMerge, mergeStatus.get(project), table);
+							resolvedMerge.getUpdatedLines().putAll(updatedItems.getUpdatedLines());
+						}
+					}
+				}
+			}
+		}
+		
+		return resolvedMerge;
+	}
+
+	private boolean isComponentJScrollPane(JPanel subPanel) {
+		return subPanel.getComponentCount() > 0 && subPanel.getComponent(0) != null
+				&& subPanel.getComponent(0) instanceof JScrollPane;
+	}
+
+	private JTable getTableFromJScrollPane(JScrollPane scrollPane) {
+		JViewport viewport = scrollPane.getViewport();
+		if (viewport.getComponent(0) != null && viewport.getComponent(0) instanceof JTable) {
+			return (JTable) viewport.getComponent(0);
+		}
+
+		return new JTable();
+	}
+
+	private boolean isSimpleTable(JTable table) {
+		return table.getValueAt(0, 1) instanceof String;
+	}
+
+	private boolean isUpdateTable(JTable table) {
+		return table.getValueAt(0, 1) instanceof FileLine;
+	}
+
+	private boolean isNewLine(Project project, String key) {
+		return mergeStatus.get(project).getNewLines().containsKey(key);
+	}
+
+	private boolean isRemovedLine(Project project, String key) {
+		return mergeStatus.get(project).getRemovedLines().containsKey(key);
+	}
+	
+	private ResolvedMerge addSelectedLines(final Project project, final ResolvedMerge resolvedMerge, final MergeStatus mergeStatus, final JTable table) {
+		for (int row = 0; row < table.getRowCount(); row++) {
+			String key = this.getKeyFromTable(table, row);
+			if (this.isNewLine(project, key) && this.isSimpleItemSelected(table, row)) {
+				resolvedMerge.getNewLines().put(key, mergeStatus.getNewLines().get(key));
+			} else if (this.isRemovedLine(project, key) && this.isSimpleItemSelected(table, row)) {
+				resolvedMerge.getRemovedLines().put(key, mergeStatus.getRemovedLines().get(key));
+			}
+		}
+		
+		return resolvedMerge;
+	}
+	
+	private ResolvedMerge addUpdatedLines(final Project project, final ResolvedMerge resolvedMerge, final MergeStatus mergeStatus, final JTable table) {
+		for (int row = 0; row < table.getRowCount(); row++) {
+			String key = this.getKeyFromTable(table, row);
+			FileLine selectedLine = this.getSelectedLineFromTable(table, row);
+			resolvedMerge.getUpdatedLines().put(key, selectedLine.getValue());
+		}
+		
+		return resolvedMerge;
+	}
+
+	private String getKeyFromTable(JTable table, int row) {
+		return (String) table.getValueAt(row, 0);
+	}
+
+	private Boolean isSimpleItemSelected(JTable table, int row) {
+		return (Boolean) table.getValueAt(row, 2);
+	}
+	
+	private FileLine getSelectedLineFromTable(JTable table, int row) {
+		FileLine oldValue = (FileLine) table.getValueAt(row, 1);
+		FileLine newValue = (FileLine) table.getValueAt(row, 2);
+		
+		if(newValue.getSelected()) {
+			return newValue;
+		} else if(oldValue.getSelected()) {
+			return oldValue;
+		} else {
+			throw new RuntimeException(); //TODO
+		}
 	}
 
 	private void resizeColumnWidth(JTable table) {
