@@ -28,6 +28,7 @@ import com.celfocus.omnichannel.digital.exception.InvalidFileException;
 import com.celfocus.omnichannel.digital.exception.InvalidJsonException;
 import com.celfocus.omnichannel.digital.io.filter.util.CustomFileFilterUtils;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
+import com.celfocus.omnichannel.digital.utils.StringUtils;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -102,9 +103,9 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 				// Atualiza os valores das linhas a serem atualizadas
 				finalMerge.getI18n().putAll(resolvedMergeEntry.getValue().getUpdatedLines());
 				
-				// Remove quem tem que remover.
+				// Adiciona as que não são para remover.
 				for(Entry<String, String> removedValue : resolvedMergeEntry.getValue().getRemovedLines().entrySet()) {
-					finalMerge.getI18n().remove(removedValue.getKey());
+					finalMerge.getI18n().put(removedValue.getKey(), removedValue.getValue());
 				}
 				
 				finalMergeList.add(finalMerge);
@@ -193,6 +194,7 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 	private void saveToFile(final FinalMerge finalMerge, final File file) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalMerge.getI18n());
+		json = StringUtils.replaceCharacters(json);
 		FileUtils.writeStringToFile(file, json, Charset.defaultCharset());
 	}
 	
@@ -201,19 +203,19 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 		
 		MapDifference<String, String> diff = Maps.difference(productionMap, localMap);
 		
-		mergeStatus.setNewLines(diff.entriesOnlyOnLeft());
-		mergeStatus.setRemovedLines(diff.entriesOnlyOnRight());
+		mergeStatus.setNewLines(diff.entriesOnlyOnRight());
+		mergeStatus.setRemovedLines(diff.entriesOnlyOnLeft());
 		
 		Map<String, ValueDifference<String>> differences = diff.entriesDiffering();
 		
 		Map<String, com.celfocus.omnichannel.digital.dto.ValueDifference<String>> copy = differences.entrySet().stream()
 			.collect(Collectors.toMap(Map.Entry::getKey,
-                e -> new com.celfocus.omnichannel.digital.dto.ValueDifference<>(e.getValue().leftValue(), e.getValue().rightValue()) ));
+                e -> new com.celfocus.omnichannel.digital.dto.ValueDifference<>(e.getValue().rightValue(), e.getValue().leftValue()) ));
 
 		
 		mergeStatus.setDifferences(copy);
 		
 		return mergeStatus;
 	}
-
+	
 }

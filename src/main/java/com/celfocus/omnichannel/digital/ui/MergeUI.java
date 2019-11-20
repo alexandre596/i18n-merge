@@ -73,7 +73,7 @@ public class MergeUI extends JFrame {
 
 	@Value("${font.size}")
 	private int fontSize;
-	
+
 	@Autowired
 	private MergeFilesService mergeFilesService;
 
@@ -325,23 +325,38 @@ public class MergeUI extends JFrame {
 		this.btnFinishStep.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				Map<Project, ResolvedMerge> resolvedMerge = new LinkedHashMap<>(); 
+				Map<Project, ResolvedMerge> resolvedMerge = new LinkedHashMap<>();
 				for (int i = 0; i < tabbedPane.getTabCount(); i++) {
 					if (tabbedPane.getComponent(i) instanceof JPanel) {
 						Project project = getProjectFromTitle(tabbedPane.getTitleAt(i));
-						resolvedMerge.put(project, getTableDataFromJPanel((JPanel) tabbedPane.getComponent(i), project));
+						resolvedMerge.put(project,
+								getTableDataFromJPanel((JPanel) tabbedPane.getComponent(i), project));
 					}
 				}
-				
+
 				try {
 					List<FinalMerge> finalMergeList = mergeFilesService.doMerge(resolvedMerge);
-					
-					for(FinalMerge f : finalMergeList) {
+
+					for (FinalMerge f : finalMergeList) {
+						mergeFilesService.saveToFile(f);
 					}
-					
+
 				} catch (InvalidFileException e1) {
-					JOptionPane.showMessageDialog(null, e1.getMessage(),
-							rb.getString("errorMessageMergePageTitle"), JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, e1.getMessage(), rb.getString("errorMessageMergePageTitle"),
+							JOptionPane.ERROR_MESSAGE);
+				}
+
+				JOptionPane.showMessageDialog(null, rb.getString("finishedMergeMessage"),
+						rb.getString("finishedMergeMessageTitle"), JOptionPane.INFORMATION_MESSAGE);
+
+				int commit = JOptionPane.showConfirmDialog(null,
+						InternationalizationHelper.formatMessage(locale, rb, "doGitCommitMessage", "messageArguments"),
+						rb.getString("doGitCommitMessageTitle"), JOptionPane.YES_NO_OPTION);
+
+				if (commit == JOptionPane.YES_OPTION) {
+					// TODO
+				} else {
+					System.exit(0);
 				}
 			}
 		});
@@ -359,7 +374,8 @@ public class MergeUI extends JFrame {
 			}
 		}
 
-		throw new ProjectNotFoundException(InternationalizationHelper.formatMessage(locale, rb.getString("errorMessageprojectNotFound"), title));
+		throw new ProjectNotFoundException(
+				InternationalizationHelper.formatMessage(locale, rb.getString("errorMessageprojectNotFound"), title));
 	}
 
 	private ResolvedMerge getTableDataFromJPanel(JPanel panel, Project project) {
@@ -372,24 +388,29 @@ public class MergeUI extends JFrame {
 				// Check if it's a scroll pane, so I can get the table
 				if (this.isComponentJScrollPane(subPanel)) {
 					JScrollPane scrollPane = (JScrollPane) subPanel.getComponent(0);
-					// Get the table and check if there's any data to it, to avoid ArrayOutOfBoundException
+					// Get the table and check if there's any data to it, to avoid
+					// ArrayOutOfBoundException
 					JTable table = this.getTableFromJScrollPane(scrollPane);
 					if (table.getRowCount() > 0) {
-						// If it's a "simple" table, aka New and Removed lines table, we add all the data that was checked
+						// If it's a "simple" table, aka New and Removed lines table, we add all the
+						// data that was checked
 						if (this.isSimpleTable(table)) {
-							ResolvedMerge simpleTableResult = this.addSelectedLines(project, resolvedMerge, mergeStatus.get(project), table);
+							ResolvedMerge simpleTableResult = this.addSelectedLines(project, resolvedMerge,
+									mergeStatus.get(project), table);
 							resolvedMerge.getNewLines().putAll(simpleTableResult.getNewLines());
 							resolvedMerge.getRemovedLines().putAll(simpleTableResult.getRemovedLines());
 						} else if (this.isUpdateTable(table)) {
-							// If it's an "update" table, we must check which value was selected before proceeding
-							ResolvedMerge updatedItems = this.addUpdatedLines(project, resolvedMerge, mergeStatus.get(project), table);
+							// If it's an "update" table, we must check which value was selected before
+							// proceeding
+							ResolvedMerge updatedItems = this.addUpdatedLines(project, resolvedMerge,
+									mergeStatus.get(project), table);
 							resolvedMerge.getUpdatedLines().putAll(updatedItems.getUpdatedLines());
 						}
 					}
 				}
 			}
 		}
-		
+
 		return resolvedMerge;
 	}
 
@@ -422,31 +443,41 @@ public class MergeUI extends JFrame {
 	private boolean isRemovedLine(Project project, String key) {
 		return mergeStatus.get(project).getRemovedLines().containsKey(key);
 	}
-	
-	private ResolvedMerge addSelectedLines(final Project project, final ResolvedMerge resolvedMerge, final MergeStatus mergeStatus, final JTable table) {
+
+	private ResolvedMerge addSelectedLines(final Project project, final ResolvedMerge resolvedMerge,
+			final MergeStatus mergeStatus, final JTable table) {
 		for (int row = 0; row < table.getRowCount(); row++) {
 			String key = this.getKeyFromTable(table, row);
-			/*  São adicionadas as novas linhas não selecionadas porque o arquivo que vai ser usado como base vai ser o arquivo local, 
-			 *  então é necessário saber quais as linhas que estão ali, mas que o usuário não quer que esteja, para que assim seja
-			 *  possível removê-las do arquivo na hora de fazer o merge.
-			 */
 			if (this.isNewLine(project, key) && !this.isSimpleItemSelected(table, row)) {
+				/*
+				 * São adicionadas as novas linhas não selecionadas porque o arquivo que vai ser
+				 * usado como base vai ser o arquivo local, então é necessário saber quais as
+				 * linhas que estão ali, mas que o usuário não quer que esteja, para que assim
+				 * seja possível removê-las do arquivo na hora de fazer o merge.
+				 */
 				resolvedMerge.getNewLines().put(key, mergeStatus.getNewLines().get(key));
-			} else if (this.isRemovedLine(project, key) && this.isSimpleItemSelected(table, row)) {
+			} else if (this.isRemovedLine(project, key) && !this.isSimpleItemSelected(table, row)) {
+				/*
+				 * São adicionadas as linhas removidas que não foram selecionadas porque o
+				 * arquivo que vai ser usadaco omo base é o local, então vão ser adicionados ali
+				 * todas as linhas que já foram removidas localmente, porém não eram para ser
+				 * removidas.
+				 */
 				resolvedMerge.getRemovedLines().put(key, mergeStatus.getRemovedLines().get(key));
 			}
 		}
-		
+
 		return resolvedMerge;
 	}
-	
-	private ResolvedMerge addUpdatedLines(final Project project, final ResolvedMerge resolvedMerge, final MergeStatus mergeStatus, final JTable table) {
+
+	private ResolvedMerge addUpdatedLines(final Project project, final ResolvedMerge resolvedMerge,
+			final MergeStatus mergeStatus, final JTable table) {
 		for (int row = 0; row < table.getRowCount(); row++) {
 			String key = this.getKeyFromTable(table, row);
 			FileLine selectedLine = this.getSelectedLineFromTable(table, row);
 			resolvedMerge.getUpdatedLines().put(key, selectedLine.getValue());
 		}
-		
+
 		return resolvedMerge;
 	}
 
@@ -457,17 +488,18 @@ public class MergeUI extends JFrame {
 	private Boolean isSimpleItemSelected(JTable table, int row) {
 		return (Boolean) table.getValueAt(row, 2);
 	}
-	
+
 	private FileLine getSelectedLineFromTable(JTable table, int row) {
 		FileLine oldValue = (FileLine) table.getValueAt(row, 1);
 		FileLine newValue = (FileLine) table.getValueAt(row, 2);
-		
-		if(newValue.getSelected()) {
+
+		if (newValue.getSelected()) {
 			return newValue;
-		} else if(oldValue.getSelected()) {
+		} else if (oldValue.getSelected()) {
 			return oldValue;
 		} else {
-			throw new NoOptionSelectedException(InternationalizationHelper.formatMessage(locale, rb.getString("errorMessageCheckProjectMessage"), row));
+			throw new NoOptionSelectedException(InternationalizationHelper.formatMessage(locale,
+					rb.getString("errorMessageCheckProjectMessage"), row));
 		}
 	}
 
