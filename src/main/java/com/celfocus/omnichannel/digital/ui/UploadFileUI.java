@@ -55,10 +55,10 @@ public class UploadFileUI extends JFrame {
 	 * Initialize the contents of the frame.
 	 */
     public void initialize() {
-		defaultFont = new Font(fontFamily, Font.PLAIN, fontSize);
+		this.defaultFont = new Font(fontFamily, Font.PLAIN, fontSize);
 		
-		locale = Locale.getDefault();
-		rb = ResourceBundle.getBundle("Translation", locale);
+		this.locale = Locale.getDefault();
+		this.rb = ResourceBundle.getBundle("i18n/Translation", locale);
 		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setTitle(rb.getString("uploadFileUiTitle"));

@@ -5,9 +5,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -16,14 +19,17 @@ import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.celfocus.omnichannel.digital.dto.FinalMerge;
 import com.celfocus.omnichannel.digital.dto.MergeStatus;
 import com.celfocus.omnichannel.digital.dto.Project;
+import com.celfocus.omnichannel.digital.dto.ResolvedMerge;
 import com.celfocus.omnichannel.digital.exception.CouldNotLocateCorrectFileException;
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
 import com.celfocus.omnichannel.digital.exception.InvalidJsonException;
 import com.celfocus.omnichannel.digital.io.filter.util.CustomFileFilterUtils;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,22 +67,74 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 				
 				Map<String, String> productionMap = this.getFileContent(productionFile);
 				Map<String, String> localMap = this.getFileContent(localFile);
-				mergeStatusList.put(p, this.printDifferences(productionMap, localMap));
+				mergeStatusList.put(p, this.getDifferences(productionMap, localMap));
 			}
 			
 		} catch (ZipException e) {
 			throw new InvalidFileException("Could not read the zip file properly", e);
 		} catch (FileNotFoundException e) {
 			throw new CouldNotLocateCorrectFileException(e);
-		} catch (JsonParseException e) {
-			throw new InvalidJsonException(e);
-		} catch (JsonMappingException e) {
+		} catch (JsonParseException | JsonMappingException e) {
 			throw new InvalidJsonException(e);
 		} catch (IOException e) {
 			throw new InvalidFileException("Failed IO Operation", e);
 		}
 
 		return mergeStatusList;
+	}
+	
+	@Override
+	public List<FinalMerge> doMerge(final Map<Project, ResolvedMerge> resolvedMergeMap) throws InvalidFileException {
+		List<FinalMerge> finalMergeList = new ArrayList<>();
+		
+		for(Entry<Project, ResolvedMerge> resolvedMergeEntry : resolvedMergeMap.entrySet()) {
+			try {
+				FinalMerge finalMerge = new FinalMerge(resolvedMergeEntry.getKey());
+				File localFile = this.getLocalFile(resolvedMergeEntry.getKey());
+				Map<String, String> localMap = this.getFileContent(localFile);
+				finalMerge.setI18n(localMap);
+				
+				// Remove as novas que não é para adicionar
+				for(Entry<String, String> newValue: resolvedMergeEntry.getValue().getNewLines().entrySet()) {
+					finalMerge.getI18n().remove(newValue.getKey());
+				}
+				
+				// Atualiza os valores das linhas a serem atualizadas
+				finalMerge.getI18n().putAll(resolvedMergeEntry.getValue().getUpdatedLines());
+				
+				// Remove quem tem que remover.
+				for(Entry<String, String> removedValue : resolvedMergeEntry.getValue().getRemovedLines().entrySet()) {
+					finalMerge.getI18n().remove(removedValue.getKey());
+				}
+				
+				finalMergeList.add(finalMerge);
+			} catch (FileNotFoundException e) {
+				throw new CouldNotLocateCorrectFileException(e);
+			} catch (JsonParseException | JsonMappingException e) {
+				throw new InvalidJsonException(e);
+			} catch (IOException e) {
+				throw new InvalidFileException(e);
+			}
+		}
+		
+		return finalMergeList;
+	}
+	
+	@Override
+	public void saveToFile(FinalMerge finalMerge) throws InvalidFileException {
+		try {
+			File localFile = this.getLocalFile(finalMerge.getProject());
+			
+			if(!localFile.exists()) {
+				throw new CouldNotLocateCorrectFileException("Local file does not exist.");	
+			}
+			
+			this.saveToFile(finalMerge, localFile);
+		} catch (FileNotFoundException e) {
+			throw new CouldNotLocateCorrectFileException(e);
+		} catch (IOException e) {
+			throw new InvalidFileException(e);
+		}
 	}
 
 	private void extractAllProductionFiles(final String productionFilePath) throws ZipException {
@@ -123,7 +181,6 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 			throw new FileNotFoundException("Could not locate local i18n for project " + p.getProjectName());
 		}
 		
-		
 		return file;
 	}
 	
@@ -133,7 +190,13 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 		return mapper.readValue(is, new TypeReference<Map<String, String>>(){});
 	}
 	
-	private MergeStatus printDifferences(Map<String, String> productionMap, Map<String, String> localMap) {
+	private void saveToFile(final FinalMerge finalMerge, final File file) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalMerge.getI18n());
+		FileUtils.writeStringToFile(file, json, Charset.defaultCharset());
+	}
+	
+	private MergeStatus getDifferences(Map<String, String> productionMap, Map<String, String> localMap) {
 		MergeStatus mergeStatus = new MergeStatus();
 		
 		MapDifference<String, String> diff = Maps.difference(productionMap, localMap);

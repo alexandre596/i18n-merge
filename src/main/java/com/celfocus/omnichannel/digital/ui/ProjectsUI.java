@@ -8,7 +8,6 @@ import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +33,7 @@ import org.springframework.stereotype.Component;
 import com.celfocus.omnichannel.digital.dto.MergeStatus;
 import com.celfocus.omnichannel.digital.dto.Project;
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
+import com.celfocus.omnichannel.digital.helpers.InternationalizationHelper;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
 
 @Component
@@ -68,10 +68,10 @@ public class ProjectsUI extends JFrame {
 		this.projectList = projectList;
 		this.productionFilePath = productionFilePath;
 		
-		defaultFont = new Font(fontFamily, Font.PLAIN, fontSize);
+		this.defaultFont = new Font(fontFamily, Font.PLAIN, fontSize);
 
-		locale = Locale.getDefault();
-		rb = ResourceBundle.getBundle("Translation", locale);
+		this.locale = Locale.getDefault();
+		this.rb = ResourceBundle.getBundle("i18n/Translation", locale);
 
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setTitle(rb.getString("projectsUiTitle"));
@@ -153,6 +153,7 @@ public class ProjectsUI extends JFrame {
 				try {
 					Map<Project, MergeStatus> mergeStatus = mergeFilesService.getMergeStatus(productionFilePath, projects);
 					mergeUI.initialize(mergeStatus);
+					dispose();
 				} catch (InvalidFileException e1) {
 					JOptionPane.showMessageDialog(null, e1.getMessage(),
 							rb.getString("errorMessageCheckProjectTitle"), JOptionPane.ERROR_MESSAGE);
@@ -189,13 +190,7 @@ public class ProjectsUI extends JFrame {
 		int counter = 1;
 		for (JTextField textField : textFields) {
 			if (!this.isValid(textField)) {
-				MessageFormat formatter = new MessageFormat("");
-				formatter.setLocale(locale);
-
-				Object[] messageArguments = { counter };
-				formatter.applyPattern(rb.getString("errorMessageCheckProjectMessage"));
-
-				JOptionPane.showMessageDialog(this, formatter.format(messageArguments),
+				JOptionPane.showMessageDialog(this, InternationalizationHelper.formatMessage(locale, rb.getString("errorMessageCheckProjectMessage"), counter),
 						rb.getString("errorMessageCheckProjectTitle"), JOptionPane.ERROR_MESSAGE);
 
 				return false;

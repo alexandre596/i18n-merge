@@ -8,8 +8,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,6 +19,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -30,13 +31,19 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
-import org.apache.commons.lang3.SerializationUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
+import com.celfocus.omnichannel.digital.dto.FinalMerge;
 import com.celfocus.omnichannel.digital.dto.MergeStatus;
 import com.celfocus.omnichannel.digital.dto.Project;
 import com.celfocus.omnichannel.digital.dto.ResolvedMerge;
 import com.celfocus.omnichannel.digital.dto.ValueDifference;
+import com.celfocus.omnichannel.digital.exception.InvalidFileException;
+import com.celfocus.omnichannel.digital.exception.NoOptionSelectedException;
+import com.celfocus.omnichannel.digital.exception.ProjectNotFoundException;
+import com.celfocus.omnichannel.digital.helpers.InternationalizationHelper;
+import com.celfocus.omnichannel.digital.services.MergeFilesService;
 import com.celfocus.omnichannel.digital.table.data.FileLine;
 import com.celfocus.omnichannel.digital.table.editor.CheckboxEditor;
 import com.celfocus.omnichannel.digital.table.editor.DoubleToggleEditor;
@@ -66,6 +73,9 @@ public class MergeUI extends JFrame {
 
 	@Value("${font.size}")
 	private int fontSize;
+	
+	@Autowired
+	private MergeFilesService mergeFilesService;
 
 	/**
 	 * Initialize the contents of the frame.
@@ -73,7 +83,7 @@ public class MergeUI extends JFrame {
 	public void initialize(Map<Project, MergeStatus> mergeStatus) {
 		this.defaultFont = new Font(fontFamily, Font.PLAIN, fontSize);
 		this.locale = Locale.getDefault();
-		this.rb = ResourceBundle.getBundle("Translation", locale);
+		this.rb = ResourceBundle.getBundle("i18n/Translation", locale);
 
 		this.mergeStatus = mergeStatus;
 
@@ -320,9 +330,18 @@ public class MergeUI extends JFrame {
 					if (tabbedPane.getComponent(i) instanceof JPanel) {
 						Project project = getProjectFromTitle(tabbedPane.getTitleAt(i));
 						resolvedMerge.put(project, getTableDataFromJPanel((JPanel) tabbedPane.getComponent(i), project));
-						resolvedMerge.get(project);
 					}
-
+				}
+				
+				try {
+					List<FinalMerge> finalMergeList = mergeFilesService.doMerge(resolvedMerge);
+					
+					for(FinalMerge f : finalMergeList) {
+					}
+					
+				} catch (InvalidFileException e1) {
+					JOptionPane.showMessageDialog(null, e1.getMessage(),
+							rb.getString("errorMessageMergePageTitle"), JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -340,7 +359,7 @@ public class MergeUI extends JFrame {
 			}
 		}
 
-		return new Project();
+		throw new ProjectNotFoundException(InternationalizationHelper.formatMessage(locale, rb.getString("errorMessageprojectNotFound"), title));
 	}
 
 	private ResolvedMerge getTableDataFromJPanel(JPanel panel, Project project) {
@@ -407,7 +426,11 @@ public class MergeUI extends JFrame {
 	private ResolvedMerge addSelectedLines(final Project project, final ResolvedMerge resolvedMerge, final MergeStatus mergeStatus, final JTable table) {
 		for (int row = 0; row < table.getRowCount(); row++) {
 			String key = this.getKeyFromTable(table, row);
-			if (this.isNewLine(project, key) && this.isSimpleItemSelected(table, row)) {
+			/*  São adicionadas as novas linhas não selecionadas porque o arquivo que vai ser usado como base vai ser o arquivo local, 
+			 *  então é necessário saber quais as linhas que estão ali, mas que o usuário não quer que esteja, para que assim seja
+			 *  possível removê-las do arquivo na hora de fazer o merge.
+			 */
+			if (this.isNewLine(project, key) && !this.isSimpleItemSelected(table, row)) {
 				resolvedMerge.getNewLines().put(key, mergeStatus.getNewLines().get(key));
 			} else if (this.isRemovedLine(project, key) && this.isSimpleItemSelected(table, row)) {
 				resolvedMerge.getRemovedLines().put(key, mergeStatus.getRemovedLines().get(key));
@@ -444,7 +467,7 @@ public class MergeUI extends JFrame {
 		} else if(oldValue.getSelected()) {
 			return oldValue;
 		} else {
-			throw new RuntimeException(); //TODO
+			throw new NoOptionSelectedException(InternationalizationHelper.formatMessage(locale, rb.getString("errorMessageCheckProjectMessage"), row));
 		}
 	}
 
