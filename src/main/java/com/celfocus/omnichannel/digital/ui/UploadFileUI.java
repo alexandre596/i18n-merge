@@ -3,6 +3,7 @@ package com.celfocus.omnichannel.digital.ui;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.HeadlessException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -36,10 +37,7 @@ public class UploadFileUI extends JFrame {
     private Locale locale;
     private ResourceBundle rb;
     
-    @Autowired
     private ProjectService projectService;
-    
-    @Autowired
     private ProjectsUI projectsUI;
     
     @Value("${default.i18n.zip.location}")
@@ -51,6 +49,13 @@ public class UploadFileUI extends JFrame {
     @Value("${font.size}")
     private int fontSize;
     
+    @Autowired
+	public UploadFileUI(ProjectService projectService, ProjectsUI projectsUI) throws HeadlessException {
+		super();
+		this.projectService = projectService;
+		this.projectsUI = projectsUI;
+	}
+
 	/**
 	 * Initialize the contents of the frame.
 	 */

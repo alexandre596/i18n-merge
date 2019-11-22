@@ -5,6 +5,7 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.HeadlessException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -43,10 +44,7 @@ public class ProjectsUI extends JFrame {
 	private Locale locale;
 	private ResourceBundle rb;
 
-	@Autowired
 	private MergeFilesService mergeFilesService;
-	
-	@Autowired
 	private MergeUI mergeUI;
 
 	@Value("${font.family}")
@@ -60,6 +58,13 @@ public class ProjectsUI extends JFrame {
 	
 	private List<String> projectList;
 	private String productionFilePath;
+	
+	@Autowired
+	public ProjectsUI(MergeFilesService mergeFilesService, MergeUI mergeUI) throws HeadlessException {
+		super();
+		this.mergeFilesService = mergeFilesService;
+		this.mergeUI = mergeUI;
+	}
 
 	/**
 	 * Initialize the contents of the frame.

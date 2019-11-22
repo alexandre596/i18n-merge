@@ -1,21 +1,15 @@
 package com.celfocus.omnichannel.digital.services.impl;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -26,14 +20,10 @@ import com.celfocus.omnichannel.digital.dto.ResolvedMerge;
 import com.celfocus.omnichannel.digital.exception.CouldNotLocateCorrectFileException;
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
 import com.celfocus.omnichannel.digital.exception.InvalidJsonException;
-import com.celfocus.omnichannel.digital.io.filter.util.CustomFileFilterUtils;
+import com.celfocus.omnichannel.digital.helpers.FileHelper;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
-import com.celfocus.omnichannel.digital.utils.StringUtils;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
@@ -63,11 +53,11 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 			this.extractAllProductionFiles(productionFilePath);
 			
 			for(Project p : projects) {
-				File productionFile = this.getProductionFile(p);
-				File localFile = this.getLocalFile(p);
+				File productionFile = FileHelper.getProductionFile(p, this.temporaryDirectory, this.i18nFileName);
+				File localFile = FileHelper.getLocalFile(p, this.excludeDirectories, this.i18nFileName);
 				
-				Map<String, String> productionMap = this.getFileContent(productionFile);
-				Map<String, String> localMap = this.getFileContent(localFile);
+				Map<String, String> productionMap = FileHelper.getFileContent(productionFile);
+				Map<String, String> localMap = FileHelper.getFileContent(localFile);
 				mergeStatusList.put(p, this.getDifferences(productionMap, localMap));
 			}
 			
@@ -91,8 +81,8 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 		for(Entry<Project, ResolvedMerge> resolvedMergeEntry : resolvedMergeMap.entrySet()) {
 			try {
 				FinalMerge finalMerge = new FinalMerge(resolvedMergeEntry.getKey());
-				File localFile = this.getLocalFile(resolvedMergeEntry.getKey());
-				Map<String, String> localMap = this.getFileContent(localFile);
+				File localFile = FileHelper.getLocalFile(resolvedMergeEntry.getKey(), this.excludeDirectories, this.i18nFileName);
+				Map<String, String> localMap = FileHelper.getFileContent(localFile);
 				finalMerge.setI18n(localMap);
 				
 				// Remove as novas que não é para adicionar
@@ -124,13 +114,13 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 	@Override
 	public void saveToFile(FinalMerge finalMerge) throws InvalidFileException {
 		try {
-			File localFile = this.getLocalFile(finalMerge.getProject());
+			File localFile = FileHelper.getLocalFile(finalMerge.getProject(), this.excludeDirectories, this.i18nFileName);
 			
 			if(!localFile.exists()) {
 				throw new CouldNotLocateCorrectFileException("Local file does not exist.");	
 			}
 			
-			this.saveToFile(finalMerge, localFile);
+			FileHelper.saveToFile(finalMerge, localFile);
 		} catch (FileNotFoundException e) {
 			throw new CouldNotLocateCorrectFileException(e);
 		} catch (IOException e) {
@@ -153,49 +143,6 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 				.filter(fileHeader -> fileHeader.getFileName()
 						.matches("(jcr_root\\/apps\\/[a-zA-Z-]*\\/i18n\\/" + this.i18nFileName + ")"))
 				.collect(Collectors.toList());
-	}
-	
-	private File getProductionFile(Project p) throws FileNotFoundException {
-		File productionFile = new File(temporaryDirectory + "\\jcr_root\\apps\\" + p.getProjectName() + "\\i18n\\" + this.i18nFileName + "");
-		if(!productionFile.exists()) {
-			throw new FileNotFoundException("Could not locate production i18n for project " + p.getProjectName());
-		}
-		
-		return productionFile;
-	}
-	
-	private File getLocalFile(Project p) throws FileNotFoundException {
-		List<File> files = (List<File>) FileUtils.listFiles(new File(p.getProjectPath() + "\\packages\\digital.cms.apps"), FileFilterUtils.nameFileFilter(i18nFileName),
-				CustomFileFilterUtils.unNameFileFilter(excludeDirectories));
-		
-		Optional<File> optional = files.stream()
-				.filter(f -> f.getParentFile() != null && f.getParentFile().getAbsolutePath().endsWith("i18n"))
-				.findFirst();
-		
-		if(!optional.isPresent()) {
-			throw new FileNotFoundException("Could not locate local i18n for project " + p.getProjectName());
-		}
-		
-		File file = optional.get();
-		
-		if(!file.exists()) {
-			throw new FileNotFoundException("Could not locate local i18n for project " + p.getProjectName());
-		}
-		
-		return file;
-	}
-	
-	private Map<String, String> getFileContent(File file) throws JsonParseException, JsonMappingException, IOException {
-		ObjectMapper mapper = new ObjectMapper();
-		InputStream is = new FileInputStream(file);
-		return mapper.readValue(is, new TypeReference<Map<String, String>>(){});
-	}
-	
-	private void saveToFile(final FinalMerge finalMerge, final File file) throws IOException {
-		ObjectMapper mapper = new ObjectMapper();
-		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalMerge.getI18n());
-		json = StringUtils.replaceCharacters(json);
-		FileUtils.writeStringToFile(file, json, Charset.defaultCharset());
 	}
 	
 	private MergeStatus getDifferences(Map<String, String> productionMap, Map<String, String> localMap) {

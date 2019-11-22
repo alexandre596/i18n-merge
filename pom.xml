@@ -20,6 +20,8 @@
 		<java.version>1.8</java.version>
 		<zip4j.version>2.2.3</zip4j.version>
 		<commons.io.version>2.6</commons.io.version>
+		<guava.version>28.1-jre</guava.version>
+		<jgit.version>5.5.1.201910021850-r</jgit.version>
 
 		<start-class>com.celfocus.omnichannel.digital.MainRunner</start-class>
 
@@ -55,22 +57,38 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>commons-io</groupId>
-		    <artifactId>commons-io</artifactId>
-		    <version>${commons.io.version}</version>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${commons.io.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>${guava.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.jgit</groupId>
+			<artifactId>org.eclipse.jgit</artifactId>
+			<version>${jgit.version}</version>
 		</dependency>
 		
 		<dependency>
-		    <groupId>com.fasterxml.jackson.core</groupId>
-		    <artifactId>jackson-databind</artifactId>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna</artifactId>
 		</dependency>
 		
 		<dependency>
-		  <groupId>com.google.guava</groupId>
-		  <artifactId>guava</artifactId>
-		  <version>28.1-jre</version>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna-platform</artifactId>
 		</dependency>
 	</dependencies>
 </project>

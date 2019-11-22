@@ -6,8 +6,10 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.HeadlessException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -39,10 +41,13 @@ import com.celfocus.omnichannel.digital.dto.MergeStatus;
 import com.celfocus.omnichannel.digital.dto.Project;
 import com.celfocus.omnichannel.digital.dto.ResolvedMerge;
 import com.celfocus.omnichannel.digital.dto.ValueDifference;
+import com.celfocus.omnichannel.digital.exception.CouldNotLocateCorrectFileException;
+import com.celfocus.omnichannel.digital.exception.GitException;
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
 import com.celfocus.omnichannel.digital.exception.NoOptionSelectedException;
 import com.celfocus.omnichannel.digital.exception.ProjectNotFoundException;
 import com.celfocus.omnichannel.digital.helpers.InternationalizationHelper;
+import com.celfocus.omnichannel.digital.services.GitService;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
 import com.celfocus.omnichannel.digital.table.data.FileLine;
 import com.celfocus.omnichannel.digital.table.editor.CheckboxEditor;
@@ -74,8 +79,15 @@ public class MergeUI extends JFrame {
 	@Value("${font.size}")
 	private int fontSize;
 
-	@Autowired
 	private MergeFilesService mergeFilesService;
+	private GitService gitService;
+
+	@Autowired
+	public MergeUI(MergeFilesService mergeFilesService, GitService gitService) {
+		super();
+		this.mergeFilesService = mergeFilesService;
+		this.gitService = gitService;
+	}
 
 	/**
 	 * Initialize the contents of the frame.
@@ -170,6 +182,8 @@ public class MergeUI extends JFrame {
 		JTable table = buildSimpleTable(data);
 		JScrollPane scrollPane = new JScrollPane(table);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
+		scrollPane.setMinimumSize(new Dimension(100, 25));
+		scrollPane.setMaximumSize(new Dimension(500, 500));
 
 		panel.add(scrollPane);
 
@@ -200,6 +214,8 @@ public class MergeUI extends JFrame {
 		JTable table = buildUpdatedValuesTable(data);
 		JScrollPane scrollPane = new JScrollPane(table);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
+		scrollPane.setMinimumSize(new Dimension(100, 25));
+		scrollPane.setMaximumSize(new Dimension(500, 800));
 
 		panel.add(scrollPane);
 
@@ -326,6 +342,7 @@ public class MergeUI extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				Map<Project, ResolvedMerge> resolvedMerge = new LinkedHashMap<>();
+				List<FinalMerge> finalMergeList = new ArrayList<>();
 				for (int i = 0; i < tabbedPane.getTabCount(); i++) {
 					if (tabbedPane.getComponent(i) instanceof JPanel) {
 						Project project = getProjectFromTitle(tabbedPane.getTitleAt(i));
@@ -335,7 +352,7 @@ public class MergeUI extends JFrame {
 				}
 
 				try {
-					List<FinalMerge> finalMergeList = mergeFilesService.doMerge(resolvedMerge);
+					finalMergeList = mergeFilesService.doMerge(resolvedMerge);
 
 					for (FinalMerge f : finalMergeList) {
 						mergeFilesService.saveToFile(f);
@@ -349,12 +366,35 @@ public class MergeUI extends JFrame {
 				JOptionPane.showMessageDialog(null, rb.getString("finishedMergeMessage"),
 						rb.getString("finishedMergeMessageTitle"), JOptionPane.INFORMATION_MESSAGE);
 
-				int commit = JOptionPane.showConfirmDialog(null,
-						InternationalizationHelper.formatMessage(locale, rb, "doGitCommitMessage", "messageArguments"),
+				int commit = JOptionPane.showConfirmDialog(null, rb.getString("doGitCommitMessage"),
 						rb.getString("doGitCommitMessageTitle"), JOptionPane.YES_NO_OPTION);
 
 				if (commit == JOptionPane.YES_OPTION) {
-					// TODO
+					try {
+						for (FinalMerge f : finalMergeList) {
+							if (!gitService.isBranchValid(f.getProject())) {
+								JOptionPane.showMessageDialog(null,
+										InternationalizationHelper.formatMessage(locale, rb,
+												"errorMessageInvalidBranch", f.getProject().getProjectName(),
+												gitService.getCurrentBranch(f.getProject())),
+										rb.getString("errorMessageInvalidBranchTitle"), JOptionPane.ERROR_MESSAGE);
+
+								continue;
+							}
+							gitService.doCommitAndPush(f.getProject());
+						}
+						
+						JOptionPane.showMessageDialog(null, rb.getString("finishedCommitMessage"),
+								rb.getString("finishedCommitMessageTitle"), JOptionPane.INFORMATION_MESSAGE);
+						
+						System.exit(0);
+					} catch (GitException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					} catch (CouldNotLocateCorrectFileException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 				} else {
 					System.exit(0);
 				}
