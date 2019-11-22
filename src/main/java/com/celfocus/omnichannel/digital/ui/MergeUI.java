@@ -78,6 +78,9 @@ public class MergeUI extends JFrame {
 
 	@Value("${font.size}")
 	private int fontSize;
+	
+	@Value("${table.max.rows}")
+	private int maxRows;
 
 	private MergeFilesService mergeFilesService;
 	private GitService gitService;
@@ -182,8 +185,6 @@ public class MergeUI extends JFrame {
 		JTable table = buildSimpleTable(data);
 		JScrollPane scrollPane = new JScrollPane(table);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
-		scrollPane.setMinimumSize(new Dimension(100, 25));
-		scrollPane.setMaximumSize(new Dimension(500, 500));
 
 		panel.add(scrollPane);
 
@@ -214,8 +215,6 @@ public class MergeUI extends JFrame {
 		JTable table = buildUpdatedValuesTable(data);
 		JScrollPane scrollPane = new JScrollPane(table);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
-		scrollPane.setMinimumSize(new Dimension(100, 25));
-		scrollPane.setMaximumSize(new Dimension(500, 800));
 
 		panel.add(scrollPane);
 
@@ -268,8 +267,9 @@ public class MergeUI extends JFrame {
 		table.setDefaultEditor(Boolean.class, new CheckboxEditor());
 
 		buildTable(table);
+		int maxHeight = data.length <= maxRows ? data.length : maxRows;
 		table.setPreferredScrollableViewportSize(
-				new Dimension(table.getPreferredSize().width, table.getRowHeight() * data.length));
+				new Dimension(table.getPreferredSize().width, table.getRowHeight() * maxHeight));
 
 		return table;
 	}
@@ -287,8 +287,9 @@ public class MergeUI extends JFrame {
 		table.setDefaultEditor(Boolean.class, new DoubleToggleEditor());
 
 		buildTable(table);
+		int maxHeight = data.length <= maxRows ? data.length : maxRows;
 		table.setPreferredScrollableViewportSize(
-				new Dimension(table.getPreferredSize().width, table.getRowHeight() * data.length));
+				new Dimension(table.getPreferredSize().width, table.getRowHeight() * maxHeight));
 
 		return table;
 	}
