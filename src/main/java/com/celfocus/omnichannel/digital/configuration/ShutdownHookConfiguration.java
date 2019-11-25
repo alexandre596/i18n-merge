@@ -22,7 +22,6 @@ public class ShutdownHookConfiguration {
 	
 	@PreDestroy
     public void destroy() {
-		LOG.debug("Deleting temporary directory");
 		File tempDir = new File(temporaryDirectory);
 		
 		if(tempDir.exists() && tempDir.isDirectory()) {
@@ -32,6 +31,8 @@ public class ShutdownHookConfiguration {
 			} catch (IOException e) {
 				LOG.error("Fail to delete temporary directory", e);
 			}
+		} else {
+			LOG.warn("No temporary directory to delete");
 		}
     }
 }

@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +45,8 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 	
 	@Value("${exclude.directories}")
 	private String excludeDirectories;
+	
+	private static final Logger LOG = LoggerFactory.getLogger(MergeFilesServiceImpl.class);
 
 	@Override
 	public Map<Project, MergeStatus> getMergeStatus(final String productionFilePath, final List<Project> projects) throws InvalidFileException {
@@ -53,6 +57,7 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 			this.extractAllProductionFiles(productionFilePath);
 			
 			for(Project p : projects) {
+				LOG.debug("Searching for files for the project {}", p.getProjectName());
 				File productionFile = FileHelper.getProductionFile(p, this.temporaryDirectory, this.i18nFileName);
 				File localFile = FileHelper.getLocalFile(p, this.excludeDirectories, this.i18nFileName);
 				
@@ -80,25 +85,30 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 		
 		for(Entry<Project, ResolvedMerge> resolvedMergeEntry : resolvedMergeMap.entrySet()) {
 			try {
+				LOG.info("Starting merge for the project {}", resolvedMergeEntry.getKey().getProjectName());
 				FinalMerge finalMerge = new FinalMerge(resolvedMergeEntry.getKey());
 				File localFile = FileHelper.getLocalFile(resolvedMergeEntry.getKey(), this.excludeDirectories, this.i18nFileName);
 				Map<String, String> localMap = FileHelper.getFileContent(localFile);
 				finalMerge.setI18n(localMap);
 				
+				LOG.info("Adding i18n entries for project {}", resolvedMergeEntry.getKey().getProjectName());
 				// Remove as novas que não é para adicionar
 				for(Entry<String, String> newValue: resolvedMergeEntry.getValue().getNewLines().entrySet()) {
 					finalMerge.getI18n().remove(newValue.getKey());
 				}
 				
+				LOG.info("Updating i18n entries for project {}", resolvedMergeEntry.getKey().getProjectName());
 				// Atualiza os valores das linhas a serem atualizadas
 				finalMerge.getI18n().putAll(resolvedMergeEntry.getValue().getUpdatedLines());
 				
+				LOG.info("Removing i18n entries for project {}", resolvedMergeEntry.getKey().getProjectName());
 				// Adiciona as que não são para remover.
 				for(Entry<String, String> removedValue : resolvedMergeEntry.getValue().getRemovedLines().entrySet()) {
 					finalMerge.getI18n().put(removedValue.getKey(), removedValue.getValue());
 				}
 				
 				finalMergeList.add(finalMerge);
+				LOG.info("Finished merge for the project {}", resolvedMergeEntry.getKey().getProjectName());
 			} catch (FileNotFoundException e) {
 				throw new CouldNotLocateCorrectFileException(e);
 			} catch (JsonParseException | JsonMappingException e) {
@@ -129,6 +139,8 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 	}
 
 	private void extractAllProductionFiles(final String productionFilePath) throws ZipException {
+		LOG.info("Extracting the production file to the temporary directory {}", this.temporaryDirectory);
+		
 		ZipFile zipFile = new ZipFile(productionFilePath);
 		List<FileHeader> productionFiles = this.getProductionI18nFile(zipFile);
 		
@@ -138,6 +150,8 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 	}
 
 	private List<FileHeader> getProductionI18nFile(final ZipFile zipFile) throws ZipException {
+		LOG.debug("Listing {} files from the zip archive", this.i18nFileName);
+		
 		List<FileHeader> fileHeaders = zipFile.getFileHeaders();
 		return fileHeaders.stream()
 				.filter(fileHeader -> fileHeader.getFileName()
@@ -146,6 +160,8 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 	}
 	
 	private MergeStatus getDifferences(Map<String, String> productionMap, Map<String, String> localMap) {
+		LOG.debug("Getting the differences between Local <> Production files");
+		
 		MergeStatus mergeStatus = new MergeStatus();
 		
 		MapDifference<String, String> diff = Maps.difference(productionMap, localMap);
@@ -161,6 +177,7 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 
 		
 		mergeStatus.setDifferences(copy);
+		LOG.debug("Differences gathered successfully");
 		
 		return mergeStatus;
 	}

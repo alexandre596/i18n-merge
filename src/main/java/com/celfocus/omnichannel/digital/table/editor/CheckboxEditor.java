@@ -12,6 +12,7 @@ import com.celfocus.omnichannel.digital.table.renderer.CheckboxRenderer;
 
 public class CheckboxEditor extends AbstractCellEditor implements TableCellEditor, ItemListener {
 
+	private static final long serialVersionUID = 7703494771529242197L;
 	private CheckboxRenderer jr = new CheckboxRenderer();
 
 	public CheckboxEditor() {

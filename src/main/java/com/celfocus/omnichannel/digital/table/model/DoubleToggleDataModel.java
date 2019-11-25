@@ -6,7 +6,8 @@ import com.celfocus.omnichannel.digital.table.data.FileLine;
 
 public class DoubleToggleDataModel extends AbstractTableModel {
 
-    private String[] names;
+	private static final long serialVersionUID = 5812541613267126654L;
+	private String[] names;
     private Object[][] values;
 
     public DoubleToggleDataModel(String[] names, Object[][] values) {

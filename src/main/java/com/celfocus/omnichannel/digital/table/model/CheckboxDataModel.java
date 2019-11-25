@@ -4,7 +4,8 @@ import javax.swing.table.AbstractTableModel;
 
 public class CheckboxDataModel extends AbstractTableModel {
 
-    private String[] names;
+	private static final long serialVersionUID = 9042858526877556519L;
+	private String[] names;
     private Object[][] values;
 
     public CheckboxDataModel(String[] names, Object[][] values) {

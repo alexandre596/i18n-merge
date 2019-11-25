@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
@@ -16,6 +18,8 @@ import net.lingala.zip4j.model.FileHeader;
 
 @Service
 public class ProjectServiceImpl implements ProjectService {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(ProjectServiceImpl.class);
 
 	@Override
 	public List<String> getProjectsFromZip(final String filePath) throws InvalidFileException {

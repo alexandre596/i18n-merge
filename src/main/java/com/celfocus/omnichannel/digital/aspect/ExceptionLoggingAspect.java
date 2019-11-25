@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Aspect
 public class ExceptionLoggingAspect {
 	
-    @Around("execution(* com.celfocus.omnichannel.digital.*.*.*(..))")
+    @Around("Pointcuts.logging()")
     public Object logError(ProceedingJoinPoint pj) throws Throwable {
     	try {
             return pj.proceed();

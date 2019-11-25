@@ -13,6 +13,7 @@ import com.celfocus.omnichannel.digital.table.renderer.DoubleToggleRenderer;
 
 public class DoubleToggleEditor extends AbstractCellEditor implements TableCellEditor, ItemListener {
 
+	private static final long serialVersionUID = -296323507006226611L;
 	private DoubleToggleRenderer dtr = new DoubleToggleRenderer();
 
 	public DoubleToggleEditor() {
