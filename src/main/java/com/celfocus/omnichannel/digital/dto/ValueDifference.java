@@ -1,5 +1,7 @@
 package com.celfocus.omnichannel.digital.dto;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+
 public class ValueDifference<T> {
 	
 	private T oldValue;
@@ -26,6 +28,11 @@ public class ValueDifference<T> {
 	}
 	public void setNewValue(T newValue) {
 		this.newValue = newValue;
+	}
+	
+	@Override
+	public String toString() {
+		return ReflectionToStringBuilder.toString(this);
 	}
 
 }

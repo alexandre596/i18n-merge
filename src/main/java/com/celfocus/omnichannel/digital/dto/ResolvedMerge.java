@@ -3,6 +3,8 @@ package com.celfocus.omnichannel.digital.dto;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+
 public class ResolvedMerge {
 	
 	private Map<String, String> newLines;
@@ -31,5 +33,10 @@ public class ResolvedMerge {
 	}
 	public void setUpdatedLines(Map<String, String> updatedLines) {
 		this.updatedLines = updatedLines;
+	}
+	
+	@Override
+	public String toString() {
+		return ReflectionToStringBuilder.toString(this);
 	}
 }

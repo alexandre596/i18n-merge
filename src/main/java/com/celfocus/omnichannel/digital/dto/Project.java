@@ -1,5 +1,7 @@
 package com.celfocus.omnichannel.digital.dto;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+
 public class Project {
 	
 	private String projectName;
@@ -19,6 +21,11 @@ public class Project {
 
 	public void setProjectPath(String projectPath) {
 		this.projectPath = projectPath;
+	}
+	
+	@Override
+	public String toString() {
+		return ReflectionToStringBuilder.toString(this);
 	}
 
 }

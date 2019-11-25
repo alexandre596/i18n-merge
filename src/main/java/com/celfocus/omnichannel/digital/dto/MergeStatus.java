@@ -2,6 +2,8 @@ package com.celfocus.omnichannel.digital.dto;
 
 import java.util.Map;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+
 public class MergeStatus {
 	
 	private Map<String, String> newLines;
@@ -25,6 +27,11 @@ public class MergeStatus {
 	}
 	public void setDifferences(Map<String, ValueDifference<String>> differences) {
 		this.differences = differences;
+	}
+	
+	@Override
+	public String toString() {
+		return ReflectionToStringBuilder.toString(this);
 	}
 
 }
