@@ -39,16 +39,19 @@ public class ProjectServiceImpl implements ProjectService {
 	}
 
 	private boolean fileExists(final String filePath) {
+		LOG.debug("Checking if file exists");
 		return new File(filePath).exists();
 	}
 
 	private boolean isZipFileValid(final String filePath) throws ZipException {
+		LOG.debug("Checking if the zip file contains all the files we need");
 		List<FileHeader> fileHeaders = new ZipFile(filePath).getFileHeaders();
 		return fileHeaders.stream()
 				.anyMatch(fileHeader -> fileHeader.getFileName().matches("(jcr_root\\/apps\\/[a-zA-Z-]*\\/i18n\\/)"));
 	}
 
 	private List<String> getProjectData(final String filePath) throws ZipException {
+		LOG.debug("Retrieving all the project names from the zip file");
 		List<FileHeader> fileHeaders = new ZipFile(filePath).getFileHeaders();
 		return fileHeaders.stream()
 				.filter(fileHeader -> fileHeader.getFileName().matches("(jcr_root\\/apps\\/[a-zA-Z-]*\\/i18n\\/)"))

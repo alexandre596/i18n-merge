@@ -17,7 +17,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
 
@@ -26,14 +25,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
+import com.celfocus.omnichannel.digital.helpers.FileHelper;
 import com.celfocus.omnichannel.digital.services.ProjectService;
+import com.celfocus.omnichannel.digital.swing.JFileSearchAutoComplete;
 
 @Component
 public class UploadFileUI extends JFrame {
 
 	private static final long serialVersionUID = -2482434625236865064L;
 	private Font defaultFont;
-	private JTextField txtUploadFile;
+	private JFileSearchAutoComplete txtUploadFile;
     private Locale locale;
     private ResourceBundle rb;
     
@@ -72,13 +73,11 @@ public class UploadFileUI extends JFrame {
 		JLabel lblUploadFile = new JLabel(rb.getString("fileToUploadLabel"));
 		lblUploadFile.setFont(defaultFont);
 		
-		txtUploadFile = new JTextField();
+		txtUploadFile = new JFileSearchAutoComplete();
 		lblUploadFile.setLabelFor(txtUploadFile);
-		txtUploadFile.setEditable(false);
 		txtUploadFile.setColumns(30);
 		txtUploadFile.setFont(defaultFont);
 		
-		//TODO REMOVER
 		txtUploadFile.setText(defaultI18nLocation);
 		
 		JButton btnSelectFileButton = new JButton(rb.getString("fileToUploadButton"));
@@ -89,6 +88,7 @@ public class UploadFileUI extends JFrame {
 				JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
 				jfc.setDialogTitle(rb.getString("uploadTitle"));
 				jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+				jfc.setCurrentDirectory(FileHelper.getFileOrParent(txtUploadFile.getText()));
 
 				FileNameExtensionFilter filter = new FileNameExtensionFilter(rb.getString("fileToUploadButton"), rb.getString("uploadableFileExtensions"));
 				jfc.addChoosableFileFilter(filter);

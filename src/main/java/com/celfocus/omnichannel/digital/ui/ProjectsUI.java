@@ -34,8 +34,10 @@ import org.springframework.stereotype.Component;
 import com.celfocus.omnichannel.digital.dto.MergeStatus;
 import com.celfocus.omnichannel.digital.dto.Project;
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
+import com.celfocus.omnichannel.digital.helpers.FileHelper;
 import com.celfocus.omnichannel.digital.helpers.InternationalizationHelper;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
+import com.celfocus.omnichannel.digital.swing.JFileSearchAutoComplete;
 
 @Component
 public class ProjectsUI extends JFrame {
@@ -108,10 +110,10 @@ public class ProjectsUI extends JFrame {
 		JLabel lblUploadFile = new JLabel(project + ":");
 		lblUploadFile.setFont(defaultFont);
 
-		JTextField txtUploadFile = new JTextField();
+		JFileSearchAutoComplete txtUploadFile = new JFileSearchAutoComplete();
 		lblUploadFile.setLabelFor(lblUploadFile);
-		txtUploadFile.setEditable(false);
 		txtUploadFile.setColumns(30);
+		txtUploadFile.setText(defaultWorkspaceLocation);
 		txtUploadFile.setFont(defaultFont);
 
 		JButton btnSelectFileButton = new JButton(rb.getString("projectToUploadButton"));
@@ -122,13 +124,14 @@ public class ProjectsUI extends JFrame {
 				JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
 				jfc.setDialogTitle(rb.getString("uploadTitle"));
 				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				jfc.setCurrentDirectory(new File(defaultWorkspaceLocation));
+				jfc.setCurrentDirectory(FileHelper.getFileOrParent(txtUploadFile.getText()));
 
 				int returnValue = jfc.showOpenDialog(null);
 
 				if (returnValue == JFileChooser.APPROVE_OPTION) {
 					File selectedFile = jfc.getSelectedFile();
 					txtUploadFile.setText(selectedFile.getAbsolutePath());
+					txtUploadFile.hideAutoCompleteOptions();
 				}
 			}
 		});

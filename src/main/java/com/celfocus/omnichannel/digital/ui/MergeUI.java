@@ -6,7 +6,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.HeadlessException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -33,6 +32,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -49,6 +50,7 @@ import com.celfocus.omnichannel.digital.exception.ProjectNotFoundException;
 import com.celfocus.omnichannel.digital.helpers.InternationalizationHelper;
 import com.celfocus.omnichannel.digital.services.GitService;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
+import com.celfocus.omnichannel.digital.services.impl.ProjectServiceImpl;
 import com.celfocus.omnichannel.digital.table.data.FileLine;
 import com.celfocus.omnichannel.digital.table.editor.CheckboxEditor;
 import com.celfocus.omnichannel.digital.table.editor.DoubleToggleEditor;
@@ -60,6 +62,8 @@ import com.celfocus.omnichannel.digital.table.renderer.LabelRenderer;
 
 @org.springframework.stereotype.Component
 public class MergeUI extends JFrame {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(MergeUI.class);
 
 	private Font defaultFont;
 	private Locale locale;
@@ -116,6 +120,8 @@ public class MergeUI extends JFrame {
 		this.tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 
 		for (Entry<Project, MergeStatus> merge : mergeStatus.entrySet()) {
+			LOG.info("Building new tab for project {}", merge.getKey().getProjectName());
+			
 			JPanel tab = new JPanel();
 			tab.setLayout(new GridBagLayout());
 
@@ -124,31 +130,37 @@ public class MergeUI extends JFrame {
 			JPanel removedLinesPanel = this.buildRemovedLinesPanel(merge.getValue());
 
 			if (isAllPanelsHidden(newLinesPanel, updatedLinesPanel, removedLinesPanel)) {
+				LOG.warn("No changes detected for project {}", merge.getKey().getProjectName());
 				JLabel noItems = new JLabel(rb.getString("noChangesLabel"));
 				noItems.setFont(defaultFont);
 				tab.add(noItems);
 			}
-
+			
 			tab.add(newLinesPanel, gbc);
 			tab.add(updatedLinesPanel, gbc);
 			tab.add(removedLinesPanel, gbc);
 			this.tabbedPane.addTab(merge.getKey().getProjectName(), tab);
-			getContentPane().add(this.tabbedPane, gbc);
-			getContentPane().add(buttonPanel, gbc);
+			LOG.info("Tab successfully created for project {}", merge.getKey().getProjectName());
 		}
+		
+		getContentPane().add(this.tabbedPane, gbc);
+		getContentPane().add(buttonPanel, gbc);
 
 		this.tabbedPane.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				JTabbedPane sourceTabbedPane = (JTabbedPane) e.getSource();
+				LOG.trace("Tab changed to {}", sourceTabbedPane.getSelectedIndex());
 
 				btnPreviousStep.setVisible(true);
 				btnNextStep.setVisible(true);
 				btnFinishStep.setVisible(false);
 
 				if (sourceTabbedPane.getSelectedIndex() == 0) {
+					LOG.debug("Hiding 'Previous' button");
 					btnPreviousStep.setVisible(false);
 				} else if (sourceTabbedPane.getSelectedIndex() == tabbedPane.getComponents().length - 1) {
+					LOG.debug("Hiding 'Nxt' button and showing 'Finish' button");
 					btnNextStep.setVisible(false);
 					btnFinishStep.setVisible(true);
 				}
@@ -165,15 +177,19 @@ public class MergeUI extends JFrame {
 	}
 
 	private JPanel buildNewLinesPanel(MergeStatus mergeStatus) {
+		LOG.info("Building a panel with new lines");
+		
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
 		if (mergeStatus.getNewLines().isEmpty()) {
+			LOG.warn("No new lines found for this project");
 			panel.setVisible(false);
 			return panel;
 		}
 
 		Object[][] data = new Object[mergeStatus.getNewLines().size()][3];
 
+		LOG.debug("Inserting new data into the table");
 		int i = 0;
 		for (Entry<String, String> newLine : mergeStatus.getNewLines().entrySet()) {
 			data[i][0] = newLine.getKey();
@@ -195,15 +211,18 @@ public class MergeUI extends JFrame {
 	}
 
 	private JPanel buildUpdatedLinesPanel(MergeStatus mergeStatus) {
+		LOG.info("Building a panel with updated values");
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
 		if (mergeStatus.getDifferences().isEmpty()) {
+			LOG.warn("No updated lines found for this project");
 			panel.setVisible(false);
 			return panel;
 		}
 
 		Object[][] data = new Object[mergeStatus.getDifferences().size()][3];
 
+		LOG.debug("Inserting updated data into the table");
 		int i = 0;
 		for (Entry<String, ValueDifference<String>> newLine : mergeStatus.getDifferences().entrySet()) {
 			data[i][0] = newLine.getKey();
@@ -225,15 +244,18 @@ public class MergeUI extends JFrame {
 	}
 
 	private JPanel buildRemovedLinesPanel(MergeStatus mergeStatus) {
+		LOG.info("Building a panel with removed values");
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
 		if (mergeStatus.getRemovedLines().isEmpty()) {
+			LOG.warn("No updated lines found for this project");
 			panel.setVisible(false);
 			return panel;
 		}
 
 		Object[][] data = new Object[mergeStatus.getRemovedLines().size()][3];
 
+		LOG.debug("Inserting removed data into the table");
 		int i = 0;
 		for (Entry<String, String> newLine : mergeStatus.getRemovedLines().entrySet()) {
 			data[i][0] = newLine.getKey();
@@ -321,6 +343,7 @@ public class MergeUI extends JFrame {
 		this.btnPreviousStep.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
+				LOG.trace("Going back one tab");
 				tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() - 1);
 			}
 		});
@@ -331,6 +354,7 @@ public class MergeUI extends JFrame {
 		this.btnNextStep.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
+				LOG.trace("Going foward one tab");
 				tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() + 1);
 			}
 		});
@@ -342,8 +366,10 @@ public class MergeUI extends JFrame {
 		this.btnFinishStep.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
+				LOG.trace("Going to the next step");
 				Map<Project, ResolvedMerge> resolvedMerge = new LinkedHashMap<>();
 				List<FinalMerge> finalMergeList = new ArrayList<>();
+				LOG.info("Recovering data inputed by the user via table");
 				for (int i = 0; i < tabbedPane.getTabCount(); i++) {
 					if (tabbedPane.getComponent(i) instanceof JPanel) {
 						Project project = getProjectFromTitle(tabbedPane.getTitleAt(i));
@@ -351,10 +377,13 @@ public class MergeUI extends JFrame {
 								getTableDataFromJPanel((JPanel) tabbedPane.getComponent(i), project));
 					}
 				}
+				
+				LOG.debug("Data recovered from the table successfully");
 
 				try {
 					finalMergeList = mergeFilesService.doMerge(resolvedMerge);
 
+					LOG.info("Attemp to save the merge result to the i18n files");
 					for (FinalMerge f : finalMergeList) {
 						mergeFilesService.saveToFile(f);
 					}
@@ -362,7 +391,10 @@ public class MergeUI extends JFrame {
 				} catch (InvalidFileException e1) {
 					JOptionPane.showMessageDialog(null, e1.getMessage(), rb.getString("errorMessageMergePageTitle"),
 							JOptionPane.ERROR_MESSAGE);
+					LOG.error(e1.getMessage(), e1);
 				}
+				
+				LOG.info("Merge finished successfully");
 
 				JOptionPane.showMessageDialog(null, rb.getString("finishedMergeMessage"),
 						rb.getString("finishedMergeMessageTitle"), JOptionPane.INFORMATION_MESSAGE);
@@ -371,13 +403,17 @@ public class MergeUI extends JFrame {
 						rb.getString("doGitCommitMessageTitle"), JOptionPane.YES_NO_OPTION);
 
 				if (commit == JOptionPane.YES_OPTION) {
+					LOG.debug("The user decided to commit this changes");
 					try {
 						for (FinalMerge f : finalMergeList) {
 							if (!gitService.isBranchValid(f.getProject())) {
+								String currentBranch = gitService.getCurrentBranch(f.getProject());
+								
+								LOG.warn("The project {} could not commit the changed because the selected branch {} is not allowed", f.getProject().getProjectName(), currentBranch);
 								JOptionPane.showMessageDialog(null,
 										InternationalizationHelper.formatMessage(locale, rb,
 												"errorMessageInvalidBranch", f.getProject().getProjectName(),
-												gitService.getCurrentBranch(f.getProject())),
+												currentBranch),
 										rb.getString("errorMessageInvalidBranchTitle"), JOptionPane.ERROR_MESSAGE);
 
 								continue;
@@ -385,18 +421,21 @@ public class MergeUI extends JFrame {
 							gitService.doCommitAndPush(f.getProject());
 						}
 						
+						LOG.info("Commited and pushed to all projects");
+						
 						JOptionPane.showMessageDialog(null, rb.getString("finishedCommitMessage"),
 								rb.getString("finishedCommitMessageTitle"), JOptionPane.INFORMATION_MESSAGE);
-						
+
+						LOG.info("Terminating application");
 						System.exit(0);
-					} catch (GitException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (CouldNotLocateCorrectFileException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+					} catch (GitException | CouldNotLocateCorrectFileException e1) {
+						JOptionPane.showMessageDialog(null, e1.getMessage(), rb.getString("errorMessageMergePageTitle"),
+								JOptionPane.ERROR_MESSAGE);
+						LOG.error(e1.getMessage(), e1);
 					}
 				} else {
+					LOG.debug("The user decided to not commit this changes");
+					LOG.info("Terminating application");
 					System.exit(0);
 				}
 			}
@@ -409,14 +448,11 @@ public class MergeUI extends JFrame {
 	}
 
 	private Project getProjectFromTitle(String title) {
-		for (Project p : mergeStatus.keySet()) {
-			if (title.equals(p.getProjectName())) {
-				return p;
-			}
-		}
-
-		throw new ProjectNotFoundException(
-				InternationalizationHelper.formatMessage(locale, rb.getString("errorMessageprojectNotFound"), title));
+		return mergeStatus.keySet().stream()
+			.filter(p -> title.equals(p.getProjectName()))
+			.findFirst()
+			.orElseThrow(() -> new ProjectNotFoundException(
+					InternationalizationHelper.formatMessage(locale, rb.getString("errorMessageprojectNotFound"), title)));
 	}
 
 	private ResolvedMerge getTableDataFromJPanel(JPanel panel, Project project) {

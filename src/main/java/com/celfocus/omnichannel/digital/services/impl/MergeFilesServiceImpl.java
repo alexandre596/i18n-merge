@@ -22,6 +22,7 @@ import com.celfocus.omnichannel.digital.dto.ResolvedMerge;
 import com.celfocus.omnichannel.digital.exception.CouldNotLocateCorrectFileException;
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
 import com.celfocus.omnichannel.digital.exception.InvalidJsonException;
+import com.celfocus.omnichannel.digital.exception.InvalidPathException;
 import com.celfocus.omnichannel.digital.helpers.FileHelper;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -68,7 +69,7 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 			
 		} catch (ZipException e) {
 			throw new InvalidFileException("Could not read the zip file properly", e);
-		} catch (FileNotFoundException e) {
+		} catch (FileNotFoundException | InvalidPathException e) {
 			throw new CouldNotLocateCorrectFileException(e);
 		} catch (JsonParseException | JsonMappingException e) {
 			throw new InvalidJsonException(e);
@@ -109,7 +110,7 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 				
 				finalMergeList.add(finalMerge);
 				LOG.info("Finished merge for the project {}", resolvedMergeEntry.getKey().getProjectName());
-			} catch (FileNotFoundException e) {
+			} catch (FileNotFoundException | InvalidPathException e) {
 				throw new CouldNotLocateCorrectFileException(e);
 			} catch (JsonParseException | JsonMappingException e) {
 				throw new InvalidJsonException(e);
@@ -131,7 +132,7 @@ public class MergeFilesServiceImpl implements MergeFilesService {
 			}
 			
 			FileHelper.saveToFile(finalMerge, localFile);
-		} catch (FileNotFoundException e) {
+		} catch (FileNotFoundException | InvalidPathException e) {
 			throw new CouldNotLocateCorrectFileException(e);
 		} catch (IOException e) {
 			throw new InvalidFileException(e);

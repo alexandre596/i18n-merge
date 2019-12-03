@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.celfocus.omnichannel.digital.dto.FinalMerge;
 import com.celfocus.omnichannel.digital.dto.Project;
+import com.celfocus.omnichannel.digital.exception.InvalidPathException;
 import com.celfocus.omnichannel.digital.io.filter.util.CustomFileFilterUtils;
 import com.celfocus.omnichannel.digital.services.impl.MergeFilesServiceImpl;
 import com.celfocus.omnichannel.digital.utils.StringUtils;
@@ -44,7 +45,12 @@ public final class FileHelper {
 		return productionFile;
 	}
 	
-	public static File getLocalFile(Project p, String excludeDirectories, String fileName) throws FileNotFoundException {
+	public static File getLocalFile(Project p, String excludeDirectories, String fileName) throws FileNotFoundException, InvalidPathException {
+		if(!new File(p.getProjectPath() + "\\packages\\digital.cms.apps").exists()) {
+			LOG.warn("The path to the project {} is invalid!", p.getProjectName());
+			throw new InvalidPathException("The given path for the project " + p.getProjectName() + " is not valid.");
+		}
+		
 		List<File> files = (List<File>) FileUtils.listFiles(new File(p.getProjectPath() + "\\packages\\digital.cms.apps"), FileFilterUtils.nameFileFilter(fileName),
 				CustomFileFilterUtils.unNameFileFilter(excludeDirectories));
 		
@@ -83,6 +89,19 @@ public final class FileHelper {
 		
 		LOG.info("Saving JSON to file {}", file.getAbsolutePath());
 		FileUtils.writeStringToFile(file, json, Charset.defaultCharset());
+	}
+	
+	public static File getFileOrParent(String filePath) {
+		File file = new File(filePath);
+		if(file.exists()) {
+			return file;
+		}
+		
+		if(filePath.contains("\\")) {
+			return new File(filePath.substring(0, filePath.lastIndexOf("\\") + 1));
+		}
+		
+		return file;
 	}
 
 }

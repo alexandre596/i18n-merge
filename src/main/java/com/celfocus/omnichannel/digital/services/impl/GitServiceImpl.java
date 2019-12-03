@@ -23,6 +23,7 @@ import com.celfocus.omnichannel.digital.exception.BranchFetchException;
 import com.celfocus.omnichannel.digital.exception.CouldNotLocateCorrectFileException;
 import com.celfocus.omnichannel.digital.exception.GitException;
 import com.celfocus.omnichannel.digital.exception.InvalidBranchException;
+import com.celfocus.omnichannel.digital.exception.InvalidPathException;
 import com.celfocus.omnichannel.digital.helpers.FileHelper;
 import com.celfocus.omnichannel.digital.helpers.GitRepositoryHelper;
 import com.celfocus.omnichannel.digital.jna.credenumerate.GenericWindowsCredentials;
@@ -85,14 +86,14 @@ public class GitServiceImpl implements GitService {
 			this.gitAdd(git, project);
 			this.gitCommit(git);
 			this.gitPush(git);
-		} catch (FileNotFoundException | NoFilepatternException e) {
+		} catch (FileNotFoundException | InvalidPathException | NoFilepatternException e) {
 			throw new CouldNotLocateCorrectFileException(e);
 		} catch (GitAPIException e) {
 			throw new GitException(e);
 		}
 	}
 	
-	private void gitAdd(Git git, Project project) throws FileNotFoundException, GitAPIException {
+	private void gitAdd(Git git, Project project) throws FileNotFoundException, InvalidPathException, GitAPIException {
 		LOG.info("Adding files to the git stashing area for the project {}", project.getProjectName());
 		File locali18n = FileHelper.getLocalFile(project, excludeDirectories, i18nFileName);
 		git.add().addFilepattern(locali18n.getAbsolutePath().replace(project.getProjectPath() + "\\", "").replace("\\", "/")).call();
