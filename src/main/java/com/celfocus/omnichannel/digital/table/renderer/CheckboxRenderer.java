@@ -8,6 +8,8 @@ import javax.swing.table.TableCellRenderer;
 
 public class CheckboxRenderer extends JCheckBox implements TableCellRenderer {
 
+	private static final long serialVersionUID = 5920373002414705323L;
+
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
 			int row, int col) {

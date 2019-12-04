@@ -50,7 +50,6 @@ import com.celfocus.omnichannel.digital.exception.ProjectNotFoundException;
 import com.celfocus.omnichannel.digital.helpers.InternationalizationHelper;
 import com.celfocus.omnichannel.digital.services.GitService;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
-import com.celfocus.omnichannel.digital.services.impl.ProjectServiceImpl;
 import com.celfocus.omnichannel.digital.table.data.FileLine;
 import com.celfocus.omnichannel.digital.table.editor.CheckboxEditor;
 import com.celfocus.omnichannel.digital.table.editor.DoubleToggleEditor;
@@ -63,6 +62,7 @@ import com.celfocus.omnichannel.digital.table.renderer.LabelRenderer;
 @org.springframework.stereotype.Component
 public class MergeUI extends JFrame {
 	
+	private static final long serialVersionUID = -5633267566899574579L;
 	private static final Logger LOG = LoggerFactory.getLogger(MergeUI.class);
 
 	private Font defaultFont;

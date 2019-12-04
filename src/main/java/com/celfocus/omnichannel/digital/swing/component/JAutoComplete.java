@@ -1,4 +1,4 @@
-package com.celfocus.omnichannel.digital.swing;
+package com.celfocus.omnichannel.digital.swing.component;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -17,6 +17,7 @@ import javax.swing.event.DocumentEvent;
 import org.apache.commons.lang3.StringUtils;
 
 import com.celfocus.omnichannel.digital.swing.event.SimpleDocumentListener;
+import com.celfocus.omnichannel.digital.swing.model.SortedComboBoxModel;
 
 public class JAutoComplete extends JTextField {
 	
@@ -74,7 +75,7 @@ public class JAutoComplete extends JTextField {
                 List<String> fileNameList = getSourceList();
                 
                 if(!fileNameList.isEmpty() && StringUtils.isNotBlank(input)) {
-                	fileNameList.parallelStream().filter(fileName -> fileName.toLowerCase().startsWith(input.toLowerCase()))
+                	fileNameList.stream().filter(fileName -> fileName.toLowerCase().startsWith(input.toLowerCase()))
 	                	.forEach(model::addElement);
                 }
                 

@@ -1,4 +1,4 @@
-package com.celfocus.omnichannel.digital.swing;
+package com.celfocus.omnichannel.digital.swing.model;
 
 import java.util.Comparator;
 import java.util.Vector;

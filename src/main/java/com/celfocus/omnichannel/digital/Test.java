@@ -6,7 +6,7 @@ import java.awt.FlowLayout;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 
-import com.celfocus.omnichannel.digital.swing.JFileSearchAutoComplete;
+import com.celfocus.omnichannel.digital.swing.component.JFileSearchAutoComplete;
 
 public class Test {
 

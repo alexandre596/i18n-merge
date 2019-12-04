@@ -20,6 +20,8 @@ import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,12 +29,14 @@ import org.springframework.stereotype.Component;
 import com.celfocus.omnichannel.digital.exception.InvalidFileException;
 import com.celfocus.omnichannel.digital.helpers.FileHelper;
 import com.celfocus.omnichannel.digital.services.ProjectService;
-import com.celfocus.omnichannel.digital.swing.JFileSearchAutoComplete;
+import com.celfocus.omnichannel.digital.swing.component.JFileSearchAutoComplete;
 
 @Component
 public class UploadFileUI extends JFrame {
 
 	private static final long serialVersionUID = -2482434625236865064L;
+	private static final Logger LOG = LoggerFactory.getLogger(UploadFileUI.class);
+	
 	private Font defaultFont;
 	private JFileSearchAutoComplete txtUploadFile;
     private Locale locale;
@@ -85,6 +89,7 @@ public class UploadFileUI extends JFrame {
 		btnSelectFileButton.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
+				LOG.trace("Select new file clicked");
 				JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
 				jfc.setDialogTitle(rb.getString("uploadTitle"));
 				jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -115,6 +120,7 @@ public class UploadFileUI extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if(!isDataValid()) {
+					LOG.warn("The data inputed is invalid");
 					JOptionPane.showMessageDialog(null, rb.getString("errorMessageUploadPageMessage"), rb.getString("errorMessageUploadPageTitle"), JOptionPane.ERROR_MESSAGE);
 					return;
 				}
@@ -124,6 +130,7 @@ public class UploadFileUI extends JFrame {
 					projectsUI.initialize(txtUploadFile.getText(), projectList);
 					dispose();
 				} catch (InvalidFileException e1) {
+					LOG.error("Could not get data from zip file successfully.", e1);
 					JOptionPane.showMessageDialog(null, rb.getString("errorMessageInvalidFileMessage"), rb.getString("errorMessageInvalidFileTitle"), JOptionPane.ERROR_MESSAGE);
 				}
 			}

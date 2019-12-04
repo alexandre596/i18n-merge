@@ -1,4 +1,4 @@
-package com.celfocus.omnichannel.digital.swing;
+package com.celfocus.omnichannel.digital.swing.component;
 
 import java.io.File;
 import java.io.IOException;

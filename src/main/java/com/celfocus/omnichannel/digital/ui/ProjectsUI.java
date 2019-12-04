@@ -27,6 +27,8 @@ import javax.swing.JTextField;
 import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -37,11 +39,14 @@ import com.celfocus.omnichannel.digital.exception.InvalidFileException;
 import com.celfocus.omnichannel.digital.helpers.FileHelper;
 import com.celfocus.omnichannel.digital.helpers.InternationalizationHelper;
 import com.celfocus.omnichannel.digital.services.MergeFilesService;
-import com.celfocus.omnichannel.digital.swing.JFileSearchAutoComplete;
+import com.celfocus.omnichannel.digital.swing.component.JFileSearchAutoComplete;
 
 @Component
 public class ProjectsUI extends JFrame {
 
+	private static final long serialVersionUID = -5913253237090837696L;
+	private static final Logger LOG = LoggerFactory.getLogger(ProjectsUI.class);
+	
 	private Font defaultFont;
 	private Locale locale;
 	private ResourceBundle rb;
@@ -105,6 +110,7 @@ public class ProjectsUI extends JFrame {
 	}
 
 	private JPanel buildContentPanel(String project) {
+		LOG.debug("Building panel for project {}", project);
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
 		JLabel lblUploadFile = new JLabel(project + ":");
@@ -121,6 +127,7 @@ public class ProjectsUI extends JFrame {
 		btnSelectFileButton.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
+				LOG.trace("Select new directory clicked");
 				JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
 				jfc.setDialogTitle(rb.getString("uploadTitle"));
 				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -154,6 +161,7 @@ public class ProjectsUI extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (!isDataValid()) {
+					LOG.warn("The data inputed is invalid");
 					return;
 				}
 				
@@ -163,6 +171,7 @@ public class ProjectsUI extends JFrame {
 					mergeUI.initialize(mergeStatus);
 					dispose();
 				} catch (InvalidFileException e1) {
+					LOG.error("Could not merge the files successfully.", e1);
 					JOptionPane.showMessageDialog(null, e1.getMessage(),
 							rb.getString("errorMessageCheckProjectTitle"), JOptionPane.ERROR_MESSAGE);
 				}
@@ -185,10 +194,12 @@ public class ProjectsUI extends JFrame {
 			project.setProjectPath(textField.getText());
 			
 			projects.add(project);
+			LOG.info("New project '{}' added!", textField.getText());
 			
 			counter = counter + 1;
 		}
 		
+		LOG.debug("Total of {} projects listed", counter);
 		return projects;
 	}
 
@@ -211,20 +222,17 @@ public class ProjectsUI extends JFrame {
 
 	private boolean isValid(JTextField textField) {
 		if (textField == null || !StringUtils.isNoneBlank(textField.getText())) {
+			LOG.warn("Empty textField detected!");
 			return false;
 		}
 
 		File directory = new File(textField.getText());
 
 		if (!directory.exists() || !directory.isDirectory()) {
+			LOG.warn("The directory '{}' is not a valid directory", textField.getText());
 			return false;
 		}
 
-		/*List<File> files = (List<File>) FileUtils.listFiles(directory, FileFilterUtils.nameFileFilter(i18nFileName),
-				CustomFileFilterUtils.unNameFileFilter(excludeDirectories));
-		return files.stream()
-				.anyMatch(f -> f.getParentFile() != null && f.getParentFile().getAbsolutePath().endsWith("i18n"));*/
-		
 		return true;
 	}
 

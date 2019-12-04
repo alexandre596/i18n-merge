@@ -10,6 +10,8 @@ import com.celfocus.omnichannel.digital.table.data.FileLine;
 
 public class DoubleToggleRenderer extends JToggleButton implements TableCellRenderer {
 	
+	private static final long serialVersionUID = -8183373633851547654L;
+
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
 			int row, int col) {
