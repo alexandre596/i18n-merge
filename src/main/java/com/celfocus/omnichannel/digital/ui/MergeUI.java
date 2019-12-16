@@ -98,6 +98,9 @@ public class MergeUI extends JFrame {
 
 	/**
 	 * Initialize the contents of the frame.
+	 * @author Alexandre
+	 * @since 1.0.0
+	 * @param mergeStatus A {@link Map} with the project information and the selected lines from the {@link ProjectsUI}.
 	 */
 	public void initialize(Map<Project, MergeStatus> mergeStatus) {
 		this.defaultFont = new Font(fontFamily, Font.PLAIN, fontSize);

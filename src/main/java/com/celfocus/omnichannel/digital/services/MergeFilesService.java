@@ -28,7 +28,7 @@ public interface MergeFilesService {
 	Map<Project, MergeStatus> getMergeStatus(String productionFilePath, List<Project> projects) throws InvalidFileException;
 	
 	/**
-	 * This method will merge the results obtained from the {@link #getMergeStatus(String, List<Project>)} method with the options the user selected on screen
+	 * This method will merge the results obtained from the {@link #getMergeStatus(String, List)} method with the options the user selected on screen
 	 * @param resolvedMergeMap a map containing the new values that <em>weren't</em> selected by the user to be added on the final file, 
 	 * 		the values that were updated and its corresponding value and the values to be removed
 	 * @return A {@link List} containing the values that were on the local file merged with the options selected by the user
@@ -39,7 +39,7 @@ public interface MergeFilesService {
 	List<FinalMerge> doMerge(Map<Project, ResolvedMerge> resolvedMergeMap) throws InvalidFileException;
 	
 	/**
-	 * THis method will save the merged result obtained from the {@link #doMerge(Map<Project, ResolvedMerge>)} method to the local file
+	 * THis method will save the merged result obtained from the {@link #doMerge(Map)} method to the local file
 	 * @param finalMerge An object that contains the final merge result that should be saved on a file 
 	 * 		and the {@link Project} object, containing all the data needed to save it in a local file
 	 * @throws InvalidFileException If the local file is invalid
