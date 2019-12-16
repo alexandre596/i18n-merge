@@ -16,7 +16,7 @@ For building and running the application you need:
 - Give the user the option which lines should be added, removed and which version of the i18n line should be sent to production, the current one (default) or the development one.
 - Commit and push the changes to the git repository.
 
-### What it doesn't do
+### What it *doesn't* do
 
 - Download the i18n from production.
 - Pull the most recent code from `develop`.
