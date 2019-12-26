@@ -27,7 +27,7 @@ For building and running the application you need:
 To clone the repository, first you need to have [git](https://git-scm.com/) installed in your machine (and since you're on GitHub, I assume you do), then you can run the following command where you want your application folder to be:
 
 ```shell
-https://github.com/alexandre596/i18n-merge.git
+git clone https://github.com/alexandre596/i18n-merge.git
 ```
 
 ## Application Properties

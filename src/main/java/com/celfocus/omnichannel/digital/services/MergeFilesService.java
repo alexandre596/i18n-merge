@@ -16,6 +16,7 @@ public interface MergeFilesService {
 	/**
 	 * This method will return the merge status using the local file as the left side
 	 * and the production file as the right side of the comparison
+	 * @since 1.0.0
 	 * @param productionFilePath Path to the production i18n file
 	 * @param projects List of project and its local paths
 	 * @return A map containing the project as the key and the {@link MergeStatus} as the value, which
@@ -29,6 +30,7 @@ public interface MergeFilesService {
 	
 	/**
 	 * This method will merge the results obtained from the {@link #getMergeStatus(String, List)} method with the options the user selected on screen
+	 * @since 1.0.0
 	 * @param resolvedMergeMap a map containing the new values that <em>weren't</em> selected by the user to be added on the final file, 
 	 * 		the values that were updated and its corresponding value and the values to be removed
 	 * @return A {@link List} containing the values that were on the local file merged with the options selected by the user
@@ -39,7 +41,8 @@ public interface MergeFilesService {
 	List<FinalMerge> doMerge(Map<Project, ResolvedMerge> resolvedMergeMap) throws InvalidFileException;
 	
 	/**
-	 * THis method will save the merged result obtained from the {@link #doMerge(Map)} method to the local file
+	 * This method will save the merged result obtained from the {@link #doMerge(Map)} method to the local file
+	 * @since 1.0.0
 	 * @param finalMerge An object that contains the final merge result that should be saved on a file 
 	 * 		and the {@link Project} object, containing all the data needed to save it in a local file
 	 * @throws InvalidFileException If the local file is invalid
